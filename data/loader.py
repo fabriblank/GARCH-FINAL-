@@ -23,6 +23,11 @@ def load_prices(symbol, years=5):
     url = f"https://stooq.com/q/d/l/?s={STOOQ_MAP[symbol]}&i=d"
     csv = requests.get(url).text
     df = pd.read_csv(StringIO(csv))
+
+    # normalize column names
+    df.columns = [c.lower() for c in df.columns]
+
     df = df.tail(years * 252)
-    df["Close"] = df["Close"].astype(float)
-    return df["Close"].values
+    prices = df["close"].astype(float).values
+
+    return prices
