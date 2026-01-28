@@ -24,10 +24,13 @@ def load_prices(symbol, years=5):
     csv = requests.get(url).text
     df = pd.read_csv(StringIO(csv))
 
-    # normalize column names
+    # normalize headers
     df.columns = [c.lower() for c in df.columns]
 
-    df = df.tail(years * 252)
-    prices = df["close"].astype(float).values
+    # possible close column names on stooq
+    for col in ["close", "adj close", "zamkniecie"]:
+        if col in df.columns:
+            prices = df[col].astype(float).values
+            return prices[-years * 252:]
 
-    return prices
+    raise ValueError(f"No close price column found for {symbol}")
