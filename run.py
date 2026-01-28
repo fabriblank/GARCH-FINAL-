@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 from data.loader import load_prices
 from model.garch import forecast_garch_vol
 from model.realized_vol import realized_vol
@@ -11,22 +12,38 @@ SYMBOLS = [
     "XAUUSD","NQ"
 ]
 
-rows = []
+results = []
 
-for s in SYMBOLS:
-    prices = load_prices(s)
-    returns = np.diff(np.log(prices))
+for symbol in SYMBOLS:
+    try:
+        prices = load_prices(symbol)
 
-    rv = realized_vol(returns)
-    fv = forecast_garch_vol(returns)
+        # safety check
+        if len(prices) < 100:
+            continue
 
-    vr, regime = classify_regime(fv, rv)
+        returns = np.diff(np.log(prices))
 
-    rows.append([s, round(fv*100,2), round(rv*100,2), round(vr,2), regime])
+        rv = realized_vol(returns)
+        fv = forecast_garch_vol(returns)
+
+        vr, regime = classify_regime(fv, rv)
+
+        results.append([
+            symbol,
+            round(fv * 100, 2),
+            round(rv * 100, 2),
+            round(vr, 2),
+            regime
+        ])
+
+    except Exception:
+        # skip symbols with bad or missing data (e.g. NQ on Stooq)
+        continue
 
 df = pd.DataFrame(
-    rows,
-    columns=["Symbol","Forecast Vol %","Median Vol %","VR","Regime"]
+    results,
+    columns=["Symbol", "Forecast Vol %", "Median Vol %", "VR", "Regime"]
 )
 
 print("\nDAILY VOLATILITY REGIME\n")
